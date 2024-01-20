@@ -1,6 +1,12 @@
 "use client";
 
 import React, {useRef, useState} from "react";
+
+// Importowanie komponentów
+import Button from "./components/Button";
+import {Toolbox} from "./components/Toolbox";
+
+// Importowanie ikon
 import {
 	BlackColorIco,
 	BrushLargeIco,
@@ -18,49 +24,97 @@ import {
 	Trash,
 	Download,
 	Brush,
-	Rectangle,
-	Circle,
+	LineTool,
 } from "./components/Icons";
-import Button from "./components/Button";
-import {Toolbox} from "./components/Toolbox";
 
 export default function DrawingBoard() {
 	const canvasRef = useRef(null);
-	const [color, setColor] = useState("#000000"); // domyślny kolor czarny
-	const [brushWidth, setBrushWidth] = useState(3); // domyślny rozmiar 3
-	const [tool, setTool] = useState("brush");
+	const [color, setColor] = useState("#000000"); // Domyślny kolor: Czarny
+	const [size, setSize] = useState(3); // Domyślny rozmiar: 3
+	const [tool, setTool] = useState("brush"); // Domyślne narzędzie: Pędzel
+	const [startPoint, setStartPoint] = useState(null); // Punkt początkowy linii
 
-	// Gdy kliknę, to zaczynam rysować
+	// Event handler dla naciśniecia przycisku myszy
 	const handleMouseDown = (event) => {
 		event.preventDefault();
 		const canvas = canvasRef.current;
 		const ctx = canvas.getContext("2d");
-		ctx.beginPath();
-		ctx.moveTo(event.clientX, event.clientY);
-		canvas.addEventListener("mousemove", handleMouseMove);
+		if (tool === "line") {
+			setStartPoint({x: event.clientX, y: event.clientY});
+		} else {
+			ctx.beginPath();
+			ctx.moveTo(event.clientX, event.clientY);
+			canvas.addEventListener("mousemove", handleMouseMove);
+		}
 		canvas.addEventListener("mouseup", handleMouseUp);
 	};
 
-	// Gdy przeciągnę mysz, to rysuję ścieżkę
+	// Event handler dla poruszania myszą
 	const handleMouseMove = (event) => {
-		event.preventDefault();
-		const canvas = canvasRef.current;
-		const ctx = canvas.getContext("2d");
-		ctx.lineTo(event.clientX, event.clientY);
-		ctx.strokeStyle = color; // kolor
-		ctx.lineWidth = brushWidth; // rozmiar
-		ctx.stroke();
+		if (tool === "brush") {
+			event.preventDefault();
+			const canvas = canvasRef.current;
+			const ctx = canvas.getContext("2d");
+			ctx.lineTo(event.clientX, event.clientY);
+			ctx.strokeStyle = color; // kolor
+			ctx.lineWidth = size; // rozmiar
+			ctx.stroke();
+		}
 	};
 
-	// Gdy puszczę mysz, to usuwam eventy
+	// Event handler dla puszczenia przycisku myszy
 	const handleMouseUp = (event) => {
 		event.preventDefault();
 		const canvas = canvasRef.current;
-		canvas.removeEventListener("mousemove", handleMouseMove);
+		if (tool === "line" && startPoint) {
+			const endPoint = {x: event.clientX, y: event.clientY};
+			drawLine(canvas, startPoint, endPoint);
+			setStartPoint(null);
+		} else {
+			canvas.removeEventListener("mousemove", handleMouseMove);
+		}
 		canvas.removeEventListener("mouseup", handleMouseUp);
 	};
 
-	// Czyszczenie
+	// Algorytm Bresenham'a do rysowania linii
+	const drawLine = async (canvas, startPoint, endPoint) => {
+		const ctx = canvas.getContext("2d");
+
+		// Obliczamy różnicę wartości x i y między punktem końcowym a początkowym
+		const dx = Math.abs(endPoint.x - startPoint.x);
+		const dy = Math.abs(endPoint.y - startPoint.y);
+
+		// Określamy kierunek ruchu wzdłuż osi x i y
+		const sx = startPoint.x < endPoint.x ? 1 : -1;
+		const sy = startPoint.y < endPoint.y ? 1 : -1;
+
+		// Inicjalizujemy błąd jako różnicę wartości x i y
+		let err = dx - dy;
+
+		// Główna pętla algorytmu Bresenhama
+		while (true) {
+			ctx.fillStyle = color;
+			ctx.fillRect(startPoint.x, startPoint.y, size, size);
+			await new Promise((resolve) => setTimeout(resolve, 1));
+
+			// Sprawdzamy, czy dotarliśmy do punktu końcowego
+			if (startPoint.x == endPoint.x && startPoint.y == endPoint.y) break;
+			// Obliczamy nowy błąd
+			let e2 = 2 * err;
+			// Jeśli błąd jest większy od negatywnego wartości y, zwiększamy błąd o wartość y i przesuwamy punkt startowy wzdłuż osi x
+			if (e2 > -dy) {
+				err -= dy;
+				startPoint.x += sx;
+			}
+			// Jeśli błąd jest mniejszy od wartości x, zwiększamy błąd o wartość x i przesuwamy punkt startowy wzdłuż osi y
+			if (e2 < dx) {
+				err += dx;
+				startPoint.y += sy;
+			}
+		}
+	};
+
+	// Czyszczenie canvasa
 	const clear = () => {
 		const canvas = canvasRef.current;
 		const ctx = canvas.getContext("2d");
@@ -70,28 +124,28 @@ export default function DrawingBoard() {
 	return (
 		<>
 			<div className="absolute top-0 left-0 z-10 flex gap-4 m-5">
-				{/* wielkość */}
+				{/* Rozmiar */}
 				<Toolbox>
 					<Button
 						variant="filled"
-						onClick={() => setBrushWidth(1)}
-						active={brushWidth === 1}>
+						onClick={() => setSize(1)}
+						active={size === 1}>
 						<BrushSmallIco />
 					</Button>
 					<Button
 						variant="filled"
-						onClick={() => setBrushWidth(3)}
-						active={brushWidth === 3}>
+						onClick={() => setSize(3)}
+						active={size === 3}>
 						<BrushNormalIco />
 					</Button>
 					<Button
 						variant="filled"
-						onClick={() => setBrushWidth(5)}
-						active={brushWidth === 5}>
+						onClick={() => setSize(5)}
+						active={size === 5}>
 						<BrushLargeIco />
 					</Button>
 				</Toolbox>
-				{/* kolory */}
+				{/* Kolory */}
 				<Toolbox>
 					<Button
 						variant="outlined"
@@ -154,6 +208,7 @@ export default function DrawingBoard() {
 						<PinkColorIco />
 					</Button>
 				</Toolbox>
+				{/* Narzędzia */}
 				<Toolbox>
 					<Button
 						variant="filled"
@@ -163,27 +218,22 @@ export default function DrawingBoard() {
 					</Button>
 					<Button
 						variant="filled"
-						onClick={() => setTool("rectangle")}
-						active={tool === "rectangle"}>
-						<Rectangle />
-					</Button>
-					<Button
-						variant="filled"
-						onClick={() => setTool("circle")}
-						active={tool === "circle"}>
-						<Circle />
+						onClick={() => setTool("line")}
+						active={tool === "line"}>
+						<LineTool />
 					</Button>
 				</Toolbox>
 			</div>
 
 			<div className="absolute top-0 right-0 z-10 flex gap-4 m-5">
+				{/* Przyciski akcji */}
 				<Toolbox>
 					<Button variant="filled" onClick={clear}>
 						<Trash />
 					</Button>
-					<Button variant="filled" onClick={clear}>
+					{/* <Button variant="filled" onClick={clear}>
 						<Download />
-					</Button>
+					</Button> */}
 				</Toolbox>
 			</div>
 
