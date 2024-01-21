@@ -27,6 +27,7 @@ import {
 	LineTool,
 	RectangleTool,
 	CircleTool,
+	SupportIcon,
 } from "./components/Icons";
 
 export default function DrawingBoard() {
@@ -362,6 +363,26 @@ export default function DrawingBoard() {
 				height={window.innerHeight}
 				onMouseDown={handleMouseDown}
 			/>
+
+			{/* Jak używać narzędzi  */}
+			{tool === "line" && (
+				<span className="absolute left-0 bottom-0 m-5 bg-white text-gray-400 text-sm flex items-center gap-2">
+					<SupportIcon width={24} height={24} />
+					Zaznacz punkt początkowy i końcowy linii
+				</span>
+			)}
+			{tool === "rectangle" && (
+				<span className="absolute left-0 bottom-0 m-5 bg-white text-gray-400 text-sm flex items-center gap-2">
+					<SupportIcon width={24} height={24} />
+					Zaznacz dwa przeciwległe wierzchołki prostokąta
+				</span>
+			)}
+			{tool === "circle" && (
+				<span className="absolute left-0 bottom-0 m-5 bg-white text-gray-400 text-sm flex items-center gap-2">
+					<SupportIcon width={24} height={24} />
+					Zaznacz średnicę okręgu
+				</span>
+			)}
 		</>
 	);
 }
