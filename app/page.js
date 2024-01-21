@@ -23,8 +23,9 @@ import {
 	PinkColorIco,
 	Trash,
 	Download,
-	Brush,
+	BrushTool,
 	LineTool,
+	RectangleTool,
 } from "./components/Icons";
 
 export default function DrawingBoard() {
@@ -39,7 +40,7 @@ export default function DrawingBoard() {
 		event.preventDefault();
 		const canvas = canvasRef.current;
 		const ctx = canvas.getContext("2d");
-		if (tool === "line") {
+		if (tool !== "brush") {
 			setStartPoint({x: event.clientX, y: event.clientY});
 		} else {
 			ctx.beginPath();
@@ -66,9 +67,13 @@ export default function DrawingBoard() {
 	const handleMouseUp = (event) => {
 		event.preventDefault();
 		const canvas = canvasRef.current;
-		if (tool === "line" && startPoint) {
+		if (tool !== "brush" && startPoint) {
 			const endPoint = {x: event.clientX, y: event.clientY};
-			drawLine(canvas, startPoint, endPoint);
+			if (tool === "line") {
+				drawLine(canvas, startPoint, endPoint);
+			} else {
+				drawRectangle(canvas, startPoint, endPoint);
+			}
 			setStartPoint(null);
 		} else {
 			canvas.removeEventListener("mousemove", handleMouseMove);
@@ -112,6 +117,23 @@ export default function DrawingBoard() {
 				startPoint.y += sy;
 			}
 		}
+	};
+
+	//  Rysowanie prostokąta z wykorzystaniem 4 linii
+	const drawRectangle = (canvas, startPoint, endPoint) => {
+		// Obliczamy współrzędne lewego dolnego rogu prostokąta
+		let x1 = Math.min(startPoint.x, endPoint.x);
+		let y1 = Math.min(startPoint.y, endPoint.y);
+
+		// Obliczamy współrzędne prawego górnego rogu prostokąta
+		let x2 = Math.max(startPoint.x, endPoint.x);
+		let y2 = Math.max(startPoint.y, endPoint.y);
+
+		// Rysujemy każdą ścianę prostokąta oddzielnie
+		drawLine(canvas, {x: x1, y: y1}, {x: x2, y: y1}); // Dolna ściana
+		drawLine(canvas, {x: x2, y: y1}, {x: x2, y: y2}); // Prawa ściana
+		drawLine(canvas, {x: x2, y: y2}, {x: x1, y: y2}); // Górna ściana
+		drawLine(canvas, {x: x1, y: y2}, {x: x1, y: y1}); // Lewa ściana
 	};
 
 	// Czyszczenie canvasa
@@ -237,13 +259,19 @@ export default function DrawingBoard() {
 						variant="filled"
 						onClick={() => setTool("brush")}
 						active={tool === "brush"}>
-						<Brush />
+						<BrushTool />
 					</Button>
 					<Button
 						variant="filled"
 						onClick={() => setTool("line")}
 						active={tool === "line"}>
 						<LineTool />
+					</Button>
+					<Button
+						variant="filled"
+						onClick={() => setTool("rectangle")}
+						active={tool === "rectangle"}>
+						<RectangleTool />
 					</Button>
 				</Toolbox>
 			</div>

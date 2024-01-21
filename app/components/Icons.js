@@ -82,7 +82,7 @@ export function Download(props) {
 	);
 }
 
-export function Brush(props) {
+export function BrushTool(props) {
 	return (
 		<svg
 			xmlns="http://www.w3.org/2000/svg"
@@ -100,5 +100,11 @@ export function Brush(props) {
 export const LineTool = () => {
 	return (
 		<span className="block w-5 h-[2px] rounded-full border-2 border-white -rotate-45"></span>
+	);
+};
+
+export const RectangleTool = () => {
+	return (
+		<span className="block w-5 h-4 rounded-sm border-2 border-white"></span>
 	);
 };
