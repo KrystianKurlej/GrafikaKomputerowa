@@ -80,33 +80,33 @@ export default function DrawingBoard() {
 	const drawLine = async (canvas, startPoint, endPoint) => {
 		const ctx = canvas.getContext("2d");
 
-		// Obliczamy różnicę wartości x i y między punktem końcowym a początkowym
+		// Obliczam różnicę wartości x i y między punktem końcowym a początkowym
 		const dx = Math.abs(endPoint.x - startPoint.x);
 		const dy = Math.abs(endPoint.y - startPoint.y);
 
-		// Określamy kierunek ruchu wzdłuż osi x i y
+		// Określam kierunek ruchu wzdłuż osi x i y
 		const sx = startPoint.x < endPoint.x ? 1 : -1;
 		const sy = startPoint.y < endPoint.y ? 1 : -1;
 
-		// Inicjalizujemy błąd jako różnicę wartości x i y
+		// Ustawiam błąd jako różnicę wartości x i y
 		let err = dx - dy;
 
-		// Główna pętla algorytmu Bresenhama
+		// Główna pętla
 		while (true) {
 			ctx.fillStyle = color;
 			ctx.fillRect(startPoint.x, startPoint.y, size, size);
-			await new Promise((resolve) => setTimeout(resolve, 1));
+			// await new Promise((resolve) => setTimeout(resolve, 1));
 
-			// Sprawdzamy, czy dotarliśmy do punktu końcowego
+			// Sprawdzam, czy dotarłem do punktu końcowego
 			if (startPoint.x == endPoint.x && startPoint.y == endPoint.y) break;
 			// Obliczamy nowy błąd
 			let e2 = 2 * err;
-			// Jeśli błąd jest większy od negatywnego wartości y, zwiększamy błąd o wartość y i przesuwamy punkt startowy wzdłuż osi x
+			// Jeśli błąd jest większy od negatywnej wartości y, zwiększam błąd o wartość y i przesuwam punkt startowy wzdłuż osi x
 			if (e2 > -dy) {
 				err -= dy;
 				startPoint.x += sx;
 			}
-			// Jeśli błąd jest mniejszy od wartości x, zwiększamy błąd o wartość x i przesuwamy punkt startowy wzdłuż osi y
+			// Jeśli błąd jest mniejszy od wartości x, zwiększam błąd o wartość x i przesuwam punkt startowy wzdłuż osi y
 			if (e2 < dx) {
 				err += dx;
 				startPoint.y += sy;
@@ -119,6 +119,29 @@ export default function DrawingBoard() {
 		const canvas = canvasRef.current;
 		const ctx = canvas.getContext("2d");
 		ctx.clearRect(0, 0, canvas.width, canvas.height);
+	};
+
+	// Pobieranie rysunku
+	const download = () => {
+		const canvas = canvasRef.current;
+		const tempCanvas = document.createElement("canvas");
+		const tempCtx = tempCanvas.getContext("2d");
+
+		tempCanvas.width = canvas.width;
+		tempCanvas.height = canvas.height;
+
+		// Ustawiam białe tło
+		tempCtx.fillStyle = "#FFFFFF";
+		tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+
+		// Kopiuję zawartość pierwotnego canvas na tempCanvas
+		tempCtx.drawImage(canvas, 0, 0);
+
+		const dataUrl = tempCanvas.toDataURL("image/jpeg");
+		const link = document.createElement("a");
+		link.download = "rysunek.jpg";
+		link.href = dataUrl;
+		link.click();
 	};
 
 	return (
@@ -231,9 +254,9 @@ export default function DrawingBoard() {
 					<Button variant="filled" onClick={clear}>
 						<Trash />
 					</Button>
-					{/* <Button variant="filled" onClick={clear}>
+					<Button variant="filled" onClick={download}>
 						<Download />
-					</Button> */}
+					</Button>
 				</Toolbox>
 			</div>
 
