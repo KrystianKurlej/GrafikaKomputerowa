@@ -26,6 +26,7 @@ import {
 	BrushTool,
 	LineTool,
 	RectangleTool,
+	CircleTool,
 } from "./components/Icons";
 
 export default function DrawingBoard() {
@@ -34,52 +35,6 @@ export default function DrawingBoard() {
 	const [size, setSize] = useState(3); // Domyślny rozmiar: 3
 	const [tool, setTool] = useState("brush"); // Domyślne narzędzie: Pędzel
 	const [startPoint, setStartPoint] = useState(null); // Punkt początkowy linii
-
-	// Event handler dla naciśniecia przycisku myszy
-	const handleMouseDown = (event) => {
-		event.preventDefault();
-		const canvas = canvasRef.current;
-		const ctx = canvas.getContext("2d");
-		if (tool !== "brush") {
-			setStartPoint({x: event.clientX, y: event.clientY});
-		} else {
-			ctx.beginPath();
-			ctx.moveTo(event.clientX, event.clientY);
-			canvas.addEventListener("mousemove", handleMouseMove);
-		}
-		canvas.addEventListener("mouseup", handleMouseUp);
-	};
-
-	// Event handler dla poruszania myszą
-	const handleMouseMove = (event) => {
-		if (tool === "brush") {
-			event.preventDefault();
-			const canvas = canvasRef.current;
-			const ctx = canvas.getContext("2d");
-			ctx.lineTo(event.clientX, event.clientY);
-			ctx.strokeStyle = color; // kolor
-			ctx.lineWidth = size; // rozmiar
-			ctx.stroke();
-		}
-	};
-
-	// Event handler dla puszczenia przycisku myszy
-	const handleMouseUp = (event) => {
-		event.preventDefault();
-		const canvas = canvasRef.current;
-		if (tool !== "brush" && startPoint) {
-			const endPoint = {x: event.clientX, y: event.clientY};
-			if (tool === "line") {
-				drawLine(canvas, startPoint, endPoint);
-			} else {
-				drawRectangle(canvas, startPoint, endPoint);
-			}
-			setStartPoint(null);
-		} else {
-			canvas.removeEventListener("mousemove", handleMouseMove);
-		}
-		canvas.removeEventListener("mouseup", handleMouseUp);
-	};
 
 	// Algorytm Bresenham'a do rysowania linii
 	const drawLine = async (canvas, startPoint, endPoint) => {
@@ -136,6 +91,112 @@ export default function DrawingBoard() {
 		drawLine(canvas, {x: x1, y: y2}, {x: x1, y: y1}); // Lewa ściana
 	};
 
+	// Algorytm rysowania okręgu
+	const drawCircle = async (canvas, startPoint, endPoint) => {
+		const ctx = canvas.getContext("2d");
+
+		// Oblicz promień okręgu na podstawie punktów startowych i końcowych
+		const radius =
+			Math.sqrt(
+				Math.pow(endPoint.x - startPoint.x, 2) +
+					Math.pow(endPoint.y - startPoint.y, 2)
+			) / 2;
+
+		// Oblicz współrzędne środka okręgu
+		const centerX = (startPoint.x + endPoint.x) / 2;
+		const centerY = (startPoint.y + endPoint.y) / 2;
+
+		// Zainicjuj wartości x i y
+		let x = radius;
+		let y = 0;
+		let pixelDecision = 1 - x;
+
+		// Główna pętla algorytmu
+		while (y <= x) {
+			// Ustaw kolor wypełnienia
+			ctx.fillStyle = color;
+
+			// Rysuj piksele ośmiokrotną symetrią
+			ctx.fillRect(centerX + x, centerY + y, size, size);
+			ctx.fillRect(centerX - x, centerY + y, size, size);
+			ctx.fillRect(centerX - x, centerY - y, size, size);
+			ctx.fillRect(centerX + x, centerY - y, size, size);
+
+			ctx.fillRect(centerX + y, centerY + x, size, size);
+			ctx.fillRect(centerX - y, centerY + x, size, size);
+			ctx.fillRect(centerX - y, centerY - x, size, size);
+			ctx.fillRect(centerX + y, centerY - x, size, size);
+
+			// await new Promise((resolve) => setTimeout(resolve, 1));
+
+			// Zwiększ wartość y
+			y++;
+
+			// Aktualizuj decyzję
+			if (pixelDecision <= 0) {
+				pixelDecision += 2 * y + 1;
+			} else {
+				x--;
+				pixelDecision += 2 * (y - x) + 1;
+			}
+		}
+	};
+
+	// Event handler dla naciśniecia przycisku myszy
+	const handleMouseDown = (event) => {
+		event.preventDefault();
+		const canvas = canvasRef.current;
+		const ctx = canvas.getContext("2d");
+		if (tool !== "brush") {
+			setStartPoint({x: event.clientX, y: event.clientY});
+		} else {
+			ctx.beginPath();
+			ctx.moveTo(event.clientX, event.clientY);
+			canvas.addEventListener("mousemove", handleMouseMove);
+		}
+		canvas.addEventListener("mouseup", handleMouseUp);
+	};
+
+	// Event handler dla poruszania myszą
+	const handleMouseMove = (event) => {
+		if (tool === "brush") {
+			event.preventDefault();
+			const canvas = canvasRef.current;
+			const ctx = canvas.getContext("2d");
+			ctx.lineTo(event.clientX, event.clientY);
+			ctx.strokeStyle = color; // kolor
+			ctx.lineWidth = size; // rozmiar
+			ctx.stroke();
+		} else {
+			null;
+		}
+	};
+
+	// Przypisanie funkcji narzędzia do narzędzia
+	const toolFunctions = {
+		brush: null,
+		line: drawLine,
+		rectangle: drawRectangle,
+		circle: drawCircle,
+	};
+
+	// Event handler dla puszczenia przycisku myszy
+	const handleMouseUp = (event) => {
+		event.preventDefault();
+		const canvas = canvasRef.current;
+		if (tool !== "brush" && startPoint) {
+			const endPoint = {x: event.clientX, y: event.clientY};
+			const toolFunction = toolFunctions[tool];
+			if (toolFunction) {
+				toolFunction(canvas, startPoint, endPoint);
+			}
+			setStartPoint(null);
+		} else {
+			canvas.removeEventListener("mousemove", handleMouseMove);
+		}
+		canvas.removeEventListener("mouseup", handleMouseUp);
+	};
+
 	// Czyszczenie canvasa
 	const clear = () => {
 		const canvas = canvasRef.current;
@@ -159,6 +220,7 @@ export default function DrawingBoard() {
 		// Kopiuję zawartość pierwotnego canvas na tempCanvas
 		tempCtx.drawImage(canvas, 0, 0);
 
+		// Generuję link do pobrania
 		const dataUrl = tempCanvas.toDataURL("image/jpeg");
 		const link = document.createElement("a");
 		link.download = "rysunek.jpg";
@@ -272,6 +334,12 @@ export default function DrawingBoard() {
 						onClick={() => setTool("rectangle")}
 						active={tool === "rectangle"}>
 						<RectangleTool />
+					</Button>
+					<Button
+						variant="filled"
+						onClick={() => setTool("circle")}
+						active={tool === "circle"}>
+						<CircleTool />
 					</Button>
 				</Toolbox>
 			</div>

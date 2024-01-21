@@ -105,6 +105,12 @@ export const LineTool = () => {
 
 export const RectangleTool = () => {
 	return (
-		<span className="block w-5 h-4 rounded-sm border-2 border-white"></span>
+		<span className="block w-5 h-4 rounded-sm border-[3px] border-white"></span>
+	);
+};
+
+export const CircleTool = () => {
+	return (
+		<span className="block w-5 h-5 rounded-full border-[3px] border-white"></span>
 	);
 };
