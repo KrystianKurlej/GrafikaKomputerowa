@@ -1,6 +1,6 @@
 "use client";
 
-import React, {useRef, useState} from "react";
+import React, {useRef, useState, useEffect} from "react";
 
 // Importowanie komponentów
 import Button from "./components/Button";
@@ -36,6 +36,11 @@ export default function DrawingBoard() {
 	const [size, setSize] = useState(3); // Domyślny rozmiar: 3
 	const [tool, setTool] = useState("brush"); // Domyślne narzędzie: Pędzel
 	const [startPoint, setStartPoint] = useState(null); // Punkt początkowy linii
+	const [canvasSize, setCanvasSize] = useState({width: 1920, height: 1080}); // Wielkość canvasa
+
+	useEffect(() => {
+		setCanvasSize({width: window.innerWidth, height: window.innerHeight});
+	}, []);
 
 	// Algorytm Bresenham'a do rysowania linii
 	const drawLine = async (canvas, startPoint, endPoint) => {
@@ -359,8 +364,8 @@ export default function DrawingBoard() {
 
 			<canvas
 				ref={canvasRef}
-				width={window.innerWidth}
-				height={window.innerHeight}
+				width={canvasSize.width}
+				height={canvasSize.height}
 				onMouseDown={handleMouseDown}
 			/>
 
